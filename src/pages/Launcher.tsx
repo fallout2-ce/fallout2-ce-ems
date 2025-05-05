@@ -182,7 +182,7 @@ export default () => {
     instance.print(`Data bundle looks ok. Continue initialization...`)
     instance.FS.syncfs(false, err => {
       if (err) return instance.print(`Failed to sync FS: ${err.name} ${err.message}`);
-      instance.print("Data is saved");
+      instance.print("Synced FS");
       return true;
     })
   }, [hasData, instance]);
