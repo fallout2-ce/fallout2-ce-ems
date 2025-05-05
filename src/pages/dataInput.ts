@@ -25,29 +25,43 @@ const mkdirWithParents = (instance: Module) => (path: string) => {
   }
 }
 
-export const directoryInputHandler = async (instance: Module, files: File[]) => {
-  const filtered = files.filter(({ webkitRelativePath }) => filterInput(webkitRelativePath));
+export const directoryInputHandler = async (instance: Module, files: FileList) => {
+  let hasError = false;
 
-  const uploaded = await Promise.all(filtered.map(file => {
+  for (const file of [...files]) {
+    if (!file.webkitRelativePath){
+      continue;
+    };
+
     const [uri, relativePath] = getUri(`${instance.ENV.HOME}`, file.webkitRelativePath, true);
 
     mkdirWithParents(instance)(`${instance.ENV.HOME}/${relativePath}`);
 
-    return new Promise<boolean>((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       const reader = new FileReader();
-      reader.addEventListener('error', reject);
+      reader.addEventListener('error', event => reject(event.target?.error));
       reader.addEventListener('loadend', ({ target }) => {
         instance.print(`Writing file ${uri} to virtual fs from ${file.webkitRelativePath}`);
-        instance.FS.writeFile(uri, new Uint8Array(target?.result as ArrayBuffer ?? throwExpression('')), { encoding: 'binary' });
-        resolve(true)
+        try {
+          instance.FS.writeFile(
+            uri, 
+            new Uint8Array(target?.result as ArrayBuffer ?? throwExpression('')),
+            { encoding: 'binary' }
+          );
+          resolve()
+        } catch(e) {
+          reject(e);
+        }
       });
       reader.readAsArrayBuffer(file);
     }).catch(e => {
+      hasError = true;
       console.error(e);
-      return false;
-    })
-  }));
-  return !uploaded.some(r => !r) && uploaded.length === filtered.length;
+      instance.print(`Failed to import ${uri}: ${e?.message ?? e ?? 'unknown exception'}`);
+    })  
+  }
+
+  return !hasError;
 }
 
 const getUri = (basePath: string, entryName: string, hasRoot: boolean) => {

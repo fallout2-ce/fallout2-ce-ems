@@ -151,7 +151,7 @@ export default () => {
     const handler = ({ target }: Event) => {
       const input = target as HTMLInputElement;
       if (!input.files) return instance.print('No files selected');
-      directoryInputHandler(instance, [...input.files]).then(setHasData).catch(e => {
+      directoryInputHandler(instance, input.files).then(setHasData).catch(e => {
         instance.print(`Failed to upload files ${e.name} ${e.message} ${e.stack}`);
       });
       input.value = '';
