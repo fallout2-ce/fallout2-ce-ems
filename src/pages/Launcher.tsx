@@ -151,7 +151,9 @@ export default () => {
     const handler = ({ target }: Event) => {
       const input = target as HTMLInputElement;
       if (!input.files) return instance.print('No files selected');
-      directoryInputHandler(instance, [...input.files]).then(setHasData);
+      directoryInputHandler(instance, [...input.files]).then(setHasData).catch(e => {
+        instance.print(`Failed to upload files ${e.name} ${e.message} ${e.stack}`);
+      });
       input.value = '';
     }
     current.addEventListener('input', handler);
@@ -167,7 +169,9 @@ export default () => {
       const input = target as HTMLInputElement;
       const file = input.files?.[0] ?? throwExpression('no file provided');
       input.value = '';
-      zipInputReader(instance, file).then(setHasData);
+      zipInputReader(instance, file).then(setHasData).catch(e => {
+        instance.print(`Failed to upload files ${e.name} ${e.message} ${e.stack}`);
+      });;
     }
     current.addEventListener('input', handler);
 
@@ -178,7 +182,8 @@ export default () => {
     if (!hasData || !instance) return;
     instance.print(`Data bundle looks ok. Continue initialization...`)
     instance.FS.syncfs(false, err => {
-      if (err) return instance.print('Failed to sync FS');
+      if (err) return instance.print(`Failed to sync FS: ${err.name} ${err.message}`);
+      instance.print("Data is saved");
       return true;
     })
   }, [hasData, instance]);
