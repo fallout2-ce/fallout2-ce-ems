@@ -89,6 +89,14 @@ export default () => {
     if (!canvas.current) return;
     if ((critical as any)['lock']) return;
     (critical as any)['lock'] = true;
+
+    for (const key of ['F2_WEB_INFO', 'F2_GAME_VERSION']) {
+      const info = import.meta.env[key];
+      if (info) {
+        pushMessage(`${info}`);
+      }
+    }
+
     pushMessage(`Starting wasm module...`);
     ModuleInstance({
       ENV: { HOME: '/fallout2-ce' },
