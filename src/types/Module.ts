@@ -3,6 +3,7 @@ export type ModuleInitParams = {
   reportDownloadProgress: (percent: number) => void
   canvas: HTMLCanvasElement
   ENV: { [key: string]: string | number }
+  onExit: (code: number) => void
 }
 
 export type Module = {
@@ -10,16 +11,18 @@ export type Module = {
   FS: {
     filesystems: { IDBFS: any, MEMFS: any }
     mkdir: (dir: string) => void
+    mkdirTree: (dir: string) => void
     mount: (fs: any, options: {}, path: string) => void,
     syncfs: (syncOrCallback: boolean | ((err: any) => void), callback?: (err: any) => void) => void
     lookupPath: (path: string) => { path: string, node: FSNode }
-    writeFile: (path: string, data: Uint8Array | string, options?: { encoding?: 'utf8' | 'binary' }) => void
-    readFile: (path: string, options: { encoding?: 'utf8' | 'binary' }) => string | Uint8Array
+    writeFile: (path: string, data: Uint8Array | string, options?: { encoding?: 'binary' | 'utf8' }) => void
+    readFile: (path: string, opts?: { flags?: number, encoding?: 'binary' | 'utf8' }) => string | Uint8Array
     stat: (path: string) => any
     unlink: (path: string) => void
     rmdir: (path: string) => void
     chdir: (path: string) => void
   }
+  mainScriptUrlOrBlob: string | Blob;
   preInit: (() => void)[]
   preRun: (() => void)[]
   locateFile: (path: string) => string
@@ -35,7 +38,7 @@ export type Module = {
   callMain: (args?: any[]) => void
 } & Record<string, any>
 
-export type FSNode = {
+type FSNode = {
   node_ops: {}
   stream_ops: {};
   readMode: number
@@ -44,7 +47,7 @@ export type FSNode = {
 
   contents: {
     [name: string]: FSNode
-  } | Int8Array
+  }
 
   /* unix timestamps */
   atime: number

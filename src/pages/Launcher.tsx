@@ -22,7 +22,6 @@ import { Module } from '../types/Module';
 
 import ActionConfirmation from '../components/ActionConfirmation';
 import DeleteIcon from '../components/icons/DeleteIcon';
-import DemoIcon from '../components/icons/DemoIcon';
 import DownloadIcon from '../components/icons/DownloadIcon';
 import FolderIcon from '../components/icons/FolderIcon';
 import FullScreenIcon from '../components/icons/FullScreenIcon';
@@ -33,13 +32,11 @@ import UploadIcon from '../components/icons/UploadIcon';
 import ZipIcon from '../components/icons/ZipIcon';
 
 import { ModuleInstance } from './module'
-import {directoryInputHandler, zipHttpReader, zipInputReader} from './dataInput';
+import { directoryInputReader, zipInputReader } from './dataInput';
 import useConfig from '../hooks/useConfig';
-import f2_resIni from '../assets/fallout2ce/f2_res.ini';
+import f2_resIni from '../assets/module/f2_res.ini';
 import fetchSaves from './fetchSaves';
 import throwExpression from '../common/throwExpression';
-
-import { isTMA, initMiniApp } from '@tma.js/sdk';
 
 export default () => {
   const { t, i18n: { resolvedLanguage } } = useTranslation();
@@ -78,13 +75,6 @@ export default () => {
     });
   }, [showConsole, messages]);
 
-  useEffect(() => {//disable canvas context menu
-    if (!canvas.current) return;
-    const handler = (e: MouseEvent) => e.preventDefault();
-    canvas.current.addEventListener('contextmenu', handler)
-    return () => canvas.current?.removeEventListener('contextmenu', handler);
-  }, [canvas]);
-
   useEffect(function critical () {//init wasm module instance
     if (!canvas.current) return;
     if ((critical as any)['lock']) return;
@@ -102,6 +92,7 @@ export default () => {
       canvas: canvas.current,
       pushMessage,
       reportDownloadProgress,
+      onExit: (code) => console.info('ExitCode', code)
     }).then(setInstance)
       .catch((e) => pushMessage(`WASM module start failed ${e}`))
   }, [canvas])
@@ -132,13 +123,6 @@ export default () => {
           setShowConsole(true);
           instance?.['_emscripten_exit_pointerlock']?.();
         }
-
-        isTMA().then(is => {
-          if (is) {
-            const [app] = initMiniApp();
-            app.ready();
-          }
-        });
       }
     })()
   }, [instance])
@@ -150,10 +134,9 @@ export default () => {
     const handler = ({ target }: Event) => {
       const input = target as HTMLInputElement;
       if (!input.files) return instance.print('No files selected');
-      directoryInputHandler(instance, input.files).then(setHasData).catch(e => {
-        instance.print(`Failed to upload files ${e.name} ${e.message} ${e.stack}`);
-      });
-      input.value = '';
+      directoryInputReader(`${instance.ENV.HOME}`, instance, [...input.files])
+        .then(setHasData)
+        .finally(() => input.value = '');
     }
     current.addEventListener('input', handler);
 
@@ -168,9 +151,7 @@ export default () => {
       const input = target as HTMLInputElement;
       const file = input.files?.[0] ?? throwExpression('no file provided');
       input.value = '';
-      zipInputReader(instance, file).then(setHasData).catch(e => {
-        instance.print(`Failed to upload files ${e.name} ${e.message} ${e.stack}`);
-      });;
+      zipInputReader(`${instance.ENV.HOME}`, instance, file).then(setHasData);
     }
     current.addEventListener('input', handler);
 
@@ -212,28 +193,6 @@ export default () => {
     instance.callMain();
     setMainRunning(true);
     setShowConsole(false);
-  }
-
-  const importSonora = async () => {
-    if (!instance) return;
-    instance.print(`Отличный выбор.... Начинаю установку.`);
-    const url = 'https://turch.in/Fallout_Sonora_1_14.zip';
-    zipHttpReader(instance, url).then(setHasData);
-  }
-
-  const importSonoraEn = async () => {
-    if (!instance) return;
-    instance.print(`Good luck you ranger....`);
-    const url = 'https://turch.in/Fallout_Sonora_1_14_en.zip';
-    zipHttpReader(instance, url).then(setHasData);
-  }
-
-
-  const importNevada = () => {
-    if (!instance) return;
-    const url = 'https://turch.in/Fallout_Nevada.zip';
-    instance.print(`Отличный выбор.... Начинаю установку.`);
-    zipHttpReader(instance, url, 20).then(setHasData);
   }
 
   useEffect(function critical () {
@@ -302,18 +261,6 @@ export default () => {
                 <ListItemIcon><FolderIcon width="2.4em" height="2.4em" style={{ margin: '0 1em 0 0' }} /></ListItemIcon>
                 <ListItemText>{t('menu.Select data folder')}</ListItemText>
               </MenuItem>
-              {resolvedLanguage === 'ru-RU' && <MenuItem onClick={() => { importSonora(); setUploadAnchorEl(undefined) }} sx={{fontSize: '10px'}}>
-                <ListItemIcon><DemoIcon width="2.4em" height="2.4em" style={{ margin: '0 1em 0 0' }} /></ListItemIcon>
-                <ListItemText>Fallout 2: Сонора</ListItemText>
-              </MenuItem>}
-              {resolvedLanguage === 'ru-RU' && <MenuItem onClick={() => { importNevada(); setUploadAnchorEl(undefined) }} sx={{fontSize: '10px'}}>
-                  <ListItemIcon><DemoIcon width="2.4em" height="2.4em" style={{ margin: '0 1em 0 0' }} /></ListItemIcon>
-                  <ListItemText>Fallout 2: Невада</ListItemText>
-              </MenuItem>}
-              {resolvedLanguage === 'en-US' && <MenuItem onClick={() => { importSonoraEn(); setUploadAnchorEl(undefined) }} sx={{fontSize: '10px'}}>
-                  <ListItemIcon><DemoIcon width="2.4em" height="2.4em" style={{ margin: '0 1em 0 0' }} /></ListItemIcon>
-                  <ListItemText>Fallout 2: Sonora</ListItemText>
-              </MenuItem>}
             </Menu>
             {initialized && hasData && !mainRunning && <Button
                 sx={{ fontSize: '1em', height: '36px' }}
@@ -409,7 +356,6 @@ export default () => {
             setHasData(false)
             setInitialized(true);
           });
-
         }}
         color="error" />
     </Card>

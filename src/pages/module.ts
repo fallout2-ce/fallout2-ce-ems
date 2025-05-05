@@ -1,8 +1,8 @@
 import { Module, ModuleInitParams } from '../types/Module';
 
-import wasm from '../assets/fallout2ce/fallout2-ce.wasm?url'
+import wasm from '../assets/module/fallout2-ce.wasm?url'
 
-import fallout2ce from '../assets/fallout2ce/fallout2-ce';
+import fallout2ce from '../assets/module/fallout2-ce';
 
 export const ModuleInstance = ({ ENV, reportDownloadProgress, pushMessage, canvas }: ModuleInitParams) => {
 
