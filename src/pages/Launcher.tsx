@@ -90,8 +90,7 @@ export default () => {
     if ((critical as any)['lock']) return;
     (critical as any)['lock'] = true;
 
-    for (const key of ['F2_WEB_INFO', 'F2_GAME_VERSION']) {
-      const info = import.meta.env[key];
+    for (const info of [import.meta.env.F2_WEB_INFO, import.meta.env.F2_GAME_VERSION]) {
       if (info) {
         pushMessage(`${info}`);
       }
