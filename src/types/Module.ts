@@ -38,7 +38,7 @@ export type Module = {
   callMain: (args?: any[]) => void
 } & Record<string, any>
 
-type FSNode = {
+export type FSNode = {
   node_ops: {}
   stream_ops: {};
   readMode: number
@@ -47,7 +47,7 @@ type FSNode = {
 
   contents: {
     [name: string]: FSNode
-  }
+  } | Int8Array
 
   /* unix timestamps */
   atime: number

@@ -4,7 +4,7 @@ import wasm from '../assets/module/fallout2-ce.wasm?url'
 
 import fallout2ce from '../assets/module/fallout2-ce';
 
-export const ModuleInstance = ({ ENV, reportDownloadProgress, pushMessage, canvas }: ModuleInitParams) => {
+export const ModuleInstance = ({ ENV, reportDownloadProgress, pushMessage, canvas, onExit }: ModuleInitParams) => {
 
   let module: Partial<Module>;
 
@@ -15,7 +15,7 @@ export const ModuleInstance = ({ ENV, reportDownloadProgress, pushMessage, canva
     preInit: [() => { Object.assign(module?.ENV ?? {}, ENV) }],
     preRun: [],
     noInitialRun: true,
-    onExit: code => console.log('exit code: '+code),
+    onExit,
     locateFile: (path: string) => {
       if (path.endsWith('wasm')) return wasm;
       throw(`Unknown file[${path}] is requested by fallout2-ce.js module; known urls are: ${[wasm]}`);
